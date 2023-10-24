@@ -26,33 +26,6 @@ zarr::FileCreator::create(int n_c,
                           int n_x,
                           std::vector<file>& files) noexcept
 {
-    const size_t n_files = n_c * n_y * n_x;
-    files.resize(n_files);
-    if (n_files < 150) {
-        try {
-            create_serial(n_c, n_y, n_x, files);
-            return true;
-        } catch (const std::exception& exc) {
-            char buf[128];
-            snprintf(
-              buf, sizeof(buf), "Failed to create directory: %s", exc.what());
-            LOGE(buf);
-            return false;
-        } catch (...) {
-            LOGE("Failed to create directory (unknown)");
-            return false;
-        }
-    } else {
-        return create_parallel(n_c, n_y, n_x, files);
-    }
-}
-
-bool
-zarr::FileCreator::create_parallel(int n_c,
-                                   int n_y,
-                                   int n_x,
-                                   std::vector<file>& files) noexcept
-{
     using namespace std::chrono_literals;
 
     std::vector<std::shared_ptr<std::mutex>> mutexes;
@@ -60,6 +33,7 @@ zarr::FileCreator::create_parallel(int n_c,
         mutexes.push_back(std::make_shared<std::mutex>());
     }
 
+    files.resize(n_c * n_y * n_x);
     std::vector<int> finished(n_c * n_y, 0);
 
     if (!create_channel_dirs_(n_c)) {
@@ -139,25 +113,17 @@ zarr::FileCreator::create_parallel(int n_c,
       finished.begin(), finished.end(), [](const auto& f) { return f == 1; });
 }
 
-void
+bool
 zarr::FileCreator::create_serial(int n_c,
                                  int n_y,
                                  int n_x,
-                                 std::vector<file>& files)
+                                 std::vector<file>& files) noexcept
 {
-    for (auto c = 0; c < n_c; ++c) {
-        fs::path path = base_dir_ / std::to_string(c);
-        if (!fs::exists(path)) {
-            EXPECT(fs::create_directories(path),
-                   "Failed to create directory: %s",
-                   path.c_str());
-        } else {
-            EXPECT(
-              fs::is_directory(path), "%s must be a directory.", path.c_str());
-        }
+    files.resize(n_c * n_y * n_x);
 
-        for (auto y = 0; y < n_y; ++y) {
-            path = base_dir_ / std::to_string(c) / std::to_string(y);
+    try {
+        for (auto c = 0; c < n_c; ++c) {
+            fs::path path = base_dir_ / std::to_string(c);
             if (!fs::exists(path)) {
                 EXPECT(fs::create_directories(path),
                        "Failed to create directory: %s",
@@ -168,19 +134,43 @@ zarr::FileCreator::create_serial(int n_c,
                        path.c_str());
             }
 
-            for (auto x = 0; x < n_x; ++x) {
-                auto& file = files[c * n_y * n_x + y * n_x + x];
-                auto file_path = base_dir_ / std::to_string(c) /
-                                 std::to_string(y) / std::to_string(x);
+            for (auto y = 0; y < n_y; ++y) {
+                path = base_dir_ / std::to_string(c) / std::to_string(y);
+                if (!fs::exists(path)) {
+                    EXPECT(fs::create_directories(path),
+                           "Failed to create directory: %s",
+                           path.c_str());
+                } else {
+                    EXPECT(fs::is_directory(path),
+                           "%s must be a directory.",
+                           path.c_str());
+                }
 
-                EXPECT(file_create(&file,
-                                   file_path.string().c_str(),
-                                   file_path.string().size()),
-                       "Failed to open file: '%s'",
-                       file_path.c_str());
+                for (auto x = 0; x < n_x; ++x) {
+                    auto& file = files[c * n_y * n_x + y * n_x + x];
+                    auto file_path = base_dir_ / std::to_string(c) /
+                                     std::to_string(y) / std::to_string(x);
+
+                    EXPECT(file_create(&file,
+                                       file_path.string().c_str(),
+                                       file_path.string().size()),
+                           "Failed to open file: '%s'",
+                           file_path.c_str());
+                }
             }
         }
+    } catch (const std::exception& exc) {
+        char buf[128];
+        snprintf(
+          buf, sizeof(buf), "Failed to create directory: %s", exc.what());
+        LOGE(buf);
+        return false;
+    } catch (...) {
+        LOGE("Failed to create directory (unknown)");
+        return false;
     }
+
+    return true;
 }
 
 bool
@@ -469,3 +459,169 @@ zarr::Writer::rollover_()
     close_files_();
     ++current_chunk_;
 }
+
+#ifndef NO_UNIT_TESTS
+#ifdef _WIN32
+#define acquire_export __declspec(dllexport)
+#else
+#define acquire_export
+#endif
+
+#include "../zarr.v2.hh"
+#include <iostream>
+#include <unordered_set>
+
+void
+do_it_serially(zarr::FileCreator* c,
+               int n_c,
+               int n_y,
+               int n_x,
+               std::vector<file>& files)
+{
+    c->set_base_dir("test_serial");
+    CHECK(c->create_serial(n_c, n_y, n_x, files));
+}
+
+void
+do_it_parallel(zarr::FileCreator* c,
+               int n_c,
+               int n_y,
+               int n_x,
+               std::vector<file>& files)
+{
+    c->set_base_dir("test_parallel");
+    CHECK(c->create(n_c, n_y, n_x, files));
+}
+
+void bench_inner(zarr::FileCreator* c, int i, int j)
+{
+    struct clock clock;
+    clock_init(&clock);
+    double serial_time, parallel_time;
+
+    std::vector<file> files(i * j);
+
+    clock_tic(&clock);
+    do_it_serially(c, 1, i, j, files);
+    serial_time = clock_toc_ms(&clock);
+    for (auto& file : files) {
+        file_close(&file);
+    }
+
+    clock_tic(&clock);
+    do_it_parallel(c, 1, i, j, files);
+    parallel_time = clock_toc_ms(&clock);
+    for (auto& file : files) {
+        file_close(&file);
+    }
+
+    std::cout << i * j << "," << serial_time << ","
+              << parallel_time << std::endl;
+
+    fs::remove_all("test_serial");
+    fs::remove_all("test_parallel");
+}
+
+extern "C"
+{
+    acquire_export int unit_test__benchmark_file_creator()
+    {
+        zarr::ZarrV2 zarr;
+        zarr::FileCreator c(&zarr);
+
+        int success = 1;
+        try {
+            std::cout << "nfiles,serial (ms),parallel (ms)" << std::endl;
+            std::unordered_set<int> sizes;
+            for (auto i = 0; i < 85; ++i) {
+                for (auto j = 0; j < 111; ++j) {
+                    const auto size = i * j;
+                    if (sizes.contains(size)) {
+                        continue;
+                    }
+
+                    sizes.insert(size);
+                    bench_inner(&c, i, j);
+                }
+            }
+//            // best case: time creation of one file
+//            clock_tic(&clock);
+//            do_it_serially(&c, 1, 1, 1, files);
+//            serial_time = clock_toc_ms(&clock);
+//
+//            for (auto& file : files) {
+//                file_close(&file);
+//            }
+//
+//            clock_tic(&clock);
+//            do_it_parallel(&c, 1, 1, 1, files);
+//            parallel_time = clock_toc_ms(&clock);
+//
+//            for (auto& file : files) {
+//                file_close(&file);
+//            }
+//
+//            std::cout << 1 << " file: " << serial_time << " ms (serial); "
+//                      << parallel_time << "ms (parallel)." << std::endl;
+//
+//            fs::remove_all("test_serial");
+//            fs::remove_all("test_parallel");
+//
+//            // average case: time creation of 18 * 18 files
+//            clock_tic(&clock);
+//            do_it_serially(&c, 1, 18, 18, files);
+//            serial_time = clock_toc_ms(&clock);
+//
+//            for (auto& file : files) {
+//                file_close(&file);
+//            }
+//
+//            clock_tic(&clock);
+//            do_it_parallel(&c, 1, 18, 18, files);
+//            parallel_time = clock_toc_ms(&clock);
+//
+//            for (auto& file : files) {
+//                file_close(&file);
+//            }
+//
+//            std::cout << 18 * 18 << " files: " << serial_time
+//                      << " ms (serial); " << parallel_time << "ms (parallel)."
+//                      << std::endl;
+//
+//            fs::remove_all("test_serial");
+//            fs::remove_all("test_parallel");
+//
+//            // worst case: time creation of 111 * 84 files
+//            clock_tic(&clock);
+//            do_it_serially(&c, 1, 84, 111, files);
+//            serial_time = clock_toc_ms(&clock);
+//
+//            for (auto& file : files) {
+//                file_close(&file);
+//            }
+//
+//            clock_tic(&clock);
+//            do_it_parallel(&c, 1, 84, 111, files);
+//            parallel_time = clock_toc_ms(&clock);
+//
+//            for (auto& file : files) {
+//                file_close(&file);
+//            }
+//
+//            std::cout << 111 * 84 << " files: " << serial_time
+//                      << " ms (serial); " << parallel_time << "ms (parallel)."
+//                      << std::endl;
+//
+//            fs::remove_all("test_serial");
+//            fs::remove_all("test_parallel");
+
+        } catch (const std::exception& exc) {
+            success = 0;
+        } catch (...) {
+            success = 0;
+        }
+        return success;
+    }
+}
+
+#endif // NO_UNIT_TESTS
