@@ -180,18 +180,21 @@ verify_layer(const LayerTestCase& test_case)
     const auto shape = zarray["shape"];
     ASSERT_EQ(int, "%d", frames_per_layer, shape[0]);
     ASSERT_EQ(int, "%d", 1, shape[1]);
-    ASSERT_EQ(int, "%d", layer_frame_height, shape[2]);
-    ASSERT_EQ(int, "%d", layer_frame_width, shape[3]);
+    ASSERT_EQ(int, "%d", 1, shape[2]);
+    ASSERT_EQ(int, "%d", layer_frame_height, shape[3]);
+    ASSERT_EQ(int, "%d", layer_frame_width, shape[4]);
 
     const auto chunks = zarray["chunks"];
     ASSERT_EQ(int, "%d", frames_per_chunk, chunks[0].get<int>());
     ASSERT_EQ(int, "%d", 1, chunks[1].get<int>());
-    ASSERT_EQ(int, "%d", layer_tile_height, chunks[2].get<int>());
-    ASSERT_EQ(int, "%d", layer_tile_width, chunks[3].get<int>());
+    ASSERT_EQ(int, "%d", 1, chunks[2].get<int>());
+    ASSERT_EQ(int, "%d", layer_tile_height, chunks[3].get<int>());
+    ASSERT_EQ(int, "%d", layer_tile_width, chunks[4].get<int>());
 
     // check chunked data
     auto chunk_size = chunks[0].get<int>() * chunks[1].get<int>() *
-                      chunks[2].get<int>() * chunks[3].get<int>();
+                      chunks[2].get<int>() * chunks[3].get<int>() *
+                      chunks[4].get<int>();
 
     const auto tiles_in_x =
       (uint32_t)std::ceil((float)layer_frame_width / (float)layer_tile_width);
@@ -200,9 +203,9 @@ verify_layer(const LayerTestCase& test_case)
 
     for (auto i = 0; i < tiles_in_y; ++i) {
         for (auto j = 0; j < tiles_in_x; ++j) {
-            const auto chunk_file_path = fs::path(TEST ".zarr/") /
-                                         std::to_string(layer) / "0" / "0" /
-                                         std::to_string(i) / std::to_string(j);
+            const auto chunk_file_path =
+              fs::path(TEST ".zarr/") / std::to_string(layer) / "0" / "0" /
+              "0" / std::to_string(i) / std::to_string(j);
             CHECK(fs::is_regular_file(chunk_file_path));
             ASSERT_GT(int, "%d", fs::file_size(chunk_file_path), 0);
             ASSERT_GT(int, "%d", chunk_size, fs::file_size(chunk_file_path));
@@ -211,20 +214,25 @@ verify_layer(const LayerTestCase& test_case)
 
     // check there's not a second chunk in t
     auto missing_path = fs::path(TEST ".zarr/") / std::to_string(layer) / "1";
-    CHECK(!fs::is_regular_file(missing_path));
+    CHECK(!fs::exists(missing_path));
+
+    // check there's not a second chunk in c
+    missing_path = fs::path(TEST ".zarr/") / std::to_string(layer) / "0" / "1";
+    CHECK(!fs::exists(missing_path));
 
     // check there's not a second chunk in z
-    missing_path = fs::path(TEST ".zarr/") / std::to_string(layer) / "0" / "1";
-    CHECK(!fs::is_regular_file(missing_path));
+    missing_path =
+      fs::path(TEST ".zarr/") / std::to_string(layer) / "0" / "0" / "1";
+    CHECK(!fs::exists(missing_path));
 
     // check there's no add'l chunks in y
     missing_path = fs::path(TEST ".zarr/") / std::to_string(layer) / "0" / "0" /
-                   std::to_string(tiles_in_y);
-    CHECK(!fs::is_regular_file(missing_path));
+                   "0" / std::to_string(tiles_in_y);
+    CHECK(!fs::exists(missing_path));
 
-    // check there's no add'l chunks in y
+    // check there's no add'l chunks in x
     missing_path = fs::path(TEST ".zarr/") / std::to_string(layer) / "0" / "0" /
-                   "0" / std::to_string(tiles_in_x);
+                   "0" / "0" / std::to_string(tiles_in_x);
     CHECK(!fs::is_regular_file(missing_path));
 }
 
@@ -262,8 +270,9 @@ main()
         const auto& scale = coord_trans["scale"];
         ASSERT_EQ(float, "%f", std::pow(2.f, i), scale[0].get<float>());
         ASSERT_EQ(float, "%f", 1.f, scale[1].get<float>());
-        ASSERT_EQ(float, "%f", std::pow(2.f, i), scale[2].get<float>());
+        ASSERT_EQ(float, "%f", 1.f, scale[2].get<float>());
         ASSERT_EQ(float, "%f", std::pow(2.f, i), scale[3].get<float>());
+        ASSERT_EQ(float, "%f", std::pow(2.f, i), scale[4].get<float>());
     }
 
     ASSERT_STREQ(multiscales["type"], "local_mean");

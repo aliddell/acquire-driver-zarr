@@ -279,5 +279,5 @@ zarr::ShardWriter::make_files_() noexcept
     file_creator_.set_base_dir(data_root_ /
                                ("c" + std::to_string(current_chunk_)));
     return file_creator_.create(
-      1, shards_per_frame_y_, shards_per_frame_x_, files_);
+      1, 1, shards_per_frame_y_, shards_per_frame_x_, files_);
 }

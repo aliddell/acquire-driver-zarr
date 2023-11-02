@@ -31,6 +31,7 @@ struct FileCreator
 
     void set_base_dir(const fs::path& base_dir) noexcept;
     [[nodiscard]] bool create(int n_c,
+                              int n_z,
                               int n_y,
                               int n_x,
                               std::vector<file>& files) noexcept;
@@ -39,7 +40,9 @@ struct FileCreator
     fs::path base_dir_;
     Zarr* zarr_;
 
-    bool create_channel_dirs_(int n_c) noexcept;
+    bool create_c_dirs_(int n_c) noexcept;
+    bool create_z_dirs_(int n_c, int n_z) noexcept;
+    bool create_y_dirs_(int n_c, int n_z, int n_y) noexcept;
 };
 
 struct Writer

@@ -146,20 +146,23 @@ main()
     auto shape = zarray["shape"];
     ASSERT_EQ(int, "%d", expected_frames_per_chunk, shape[0]);
     ASSERT_EQ(int, "%d", 1, shape[1]);
-    ASSERT_EQ(int, "%d", frame_height, shape[2]);
-    ASSERT_EQ(int, "%d", frame_width, shape[3]);
+    ASSERT_EQ(int, "%d", 1, shape[2]);
+    ASSERT_EQ(int, "%d", frame_height, shape[3]);
+    ASSERT_EQ(int, "%d", frame_width, shape[4]);
 
     auto chunks = zarray["chunks"];
     ASSERT_EQ(int, "%d", expected_frames_per_chunk, chunks[0]);
     ASSERT_EQ(int, "%d", 1, chunks[1]);
-    ASSERT_EQ(int, "%d", frame_height, chunks[2]);
-    ASSERT_EQ(int, "%d", frame_width, chunks[3]);
+    ASSERT_EQ(int, "%d", 1, chunks[2]);
+    ASSERT_EQ(int, "%d", frame_height, chunks[3]);
+    ASSERT_EQ(int, "%d", frame_width, chunks[4]);
 
     // check chunked data
     auto raw_chunk_size = chunks[0].get<int>() * chunks[1].get<int>() *
-                          chunks[2].get<int>() * chunks[3].get<int>();
+                          chunks[2].get<int>() * chunks[3].get<int>() *
+                          chunks[4].get<int>();
 
-    const auto chunk_file_path = fs::path(TEST ".zarr/0/0/0/0/0");
+    const auto chunk_file_path = fs::path(TEST ".zarr/0/0/0/0/0/0");
     CHECK(fs::is_regular_file(chunk_file_path));
     ASSERT_GT(int, "%d", fs::file_size(chunk_file_path), 0);
     ASSERT_GT(int, "%d", raw_chunk_size, fs::file_size(chunk_file_path));

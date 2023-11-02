@@ -103,6 +103,7 @@ zarr::ZarrV2::write_array_metadata_(size_t level) const
           {
             frame_count,     // t
             1,               // c
+            1,               // z
             image_dims.rows, // y
             image_dims.cols, // x
           } },
@@ -110,6 +111,7 @@ zarr::ZarrV2::write_array_metadata_(size_t level) const
           {
             frames_per_chunk, // t
             1,                // c
+            1,                // z
             tile_dims.rows,   // y
             tile_dims.cols,   // x
           } },
@@ -171,6 +173,10 @@ zarr::ZarrV2::write_group_metadata_() const
           { "type", "channel" },
         },
         {
+          { "name", "z" },
+          { "type", "space" },
+        },
+        {
           { "name", "y" },
           { "type", "space" },
           { "unit", "micrometer" },
@@ -191,7 +197,14 @@ zarr::ZarrV2::write_group_metadata_() const
                 {
                   {
                     { "type", "scale" },
-                    { "scale", { 1, 1, pixel_scale_um_.y, pixel_scale_um_.x } },
+                    { "scale",
+                      {
+                        1,                 // t
+                        1,                 // c
+                        1,                 // z
+                        pixel_scale_um_.y, // y
+                        pixel_scale_um_.x  // x
+                      } },
                   },
                 } },
             },
@@ -207,8 +220,9 @@ zarr::ZarrV2::write_group_metadata_() const
                     {
                       "scale",
                       {
-                        std::pow(2, i), // t
-                        1,              // c
+                        std::pow(2, i),                     // t
+                        1,                                  // c
+                        1,                                  // z
                         std::pow(2, i) * pixel_scale_um_.y, // y
                         std::pow(2, i) * pixel_scale_um_.x  // x
                       },
