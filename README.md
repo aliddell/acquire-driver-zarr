@@ -128,8 +128,6 @@ storage_properties_set_sharding_props(&storage_props,
 
 This would result in all 9 chunks being combined into a single shard.
 
-```c
-
 ### Compression
 
 Compression is done via [Blosc][].
