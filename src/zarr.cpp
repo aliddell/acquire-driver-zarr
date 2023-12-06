@@ -321,6 +321,8 @@ void
 zarr::Zarr::set(const StorageProperties* props)
 {
     CHECK(props);
+    EXPECT(state != DeviceState_Running,
+           "Cannot set properties while device is running.");
 
     StoragePropertyMetadata meta{};
     get_meta(&meta);
