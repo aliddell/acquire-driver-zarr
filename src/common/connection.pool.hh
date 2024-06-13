@@ -1,9 +1,13 @@
 #ifndef H_ACQUIRE_STORAGE_ZARR_CONNECTION_POOL_V0
 #define H_ACQUIRE_STORAGE_ZARR_CONNECTION_POOL_V0
 
-#include <aws/s3/S3Client.h>
+//#include <aws/s3/S3Client.h>
 
+#include <condition_variable>
 #include <memory>
+#include <mutex>
+#include <string>
+#include <vector>
 
 namespace acquire::sink::zarr {
 struct S3Connection final
@@ -15,10 +19,10 @@ struct S3Connection final
 
     ~S3Connection() noexcept;
 
-    std::shared_ptr<Aws::S3::S3Client> client() const noexcept;
+//    std::shared_ptr<Aws::S3::S3Client> client() const noexcept;
 
   private:
-    std::shared_ptr<Aws::S3::S3Client> client_;
+//    std::shared_ptr<Aws::S3::S3Client> client_;
 };
 
 struct S3ConnectionPool final

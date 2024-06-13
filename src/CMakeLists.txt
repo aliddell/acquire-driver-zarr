@@ -47,11 +47,11 @@ target_link_libraries(${tgt} PRIVATE
         acquire-device-properties
         cblosc
         json
-        ${AWSSDK_LINK_LIBRARIES}
+#        ${AWSSDK_LINK_LIBRARIES}
 )
 
 set_target_properties(${tgt} PROPERTIES
-        MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
+        MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL"
 )
 
 install(TARGETS ${tgt} LIBRARY DESTINATION lib)

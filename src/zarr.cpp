@@ -363,7 +363,7 @@ zarr::Zarr::set(const StorageProperties* props)
         std::vector<std::string> tokens = common::split_uri(uri);
         CHECK(tokens.size() > 2); // s3://bucket/key
         dataset_root_ = uri;
-        aws_options_ = Aws::SDKOptions();
+        //        aws_options_ = Aws::SDKOptions();
     } else {
         dataset_root_ = as_path(*props).string();
     }
@@ -461,20 +461,22 @@ zarr::Zarr::start()
         std::function<void(const std::string&)> set_error =
           [this](const std::string& err) { this->set_error(err); };
 
-        thread_pool_ = std::make_shared<ThreadPool>(1, std::move(set_error));
+        thread_pool_ = std::make_shared<ThreadPool>(
+          std::thread::hardware_concurrency(), std::move(set_error));
     }
 
     // if this is an S3 acquisition, set up the API and connection pool
-    if (aws_options_) {
-        Aws::InitAPI(*aws_options_);
-
-        std::vector<std::string> tokens = common::split_uri(dataset_root_);
-        CHECK(tokens.size() > 2); // s3://bucket/key
-        std::string endpoint = tokens.at(0) + "//" + tokens.at(1);
-
-        connection_pool_ = std::make_shared<S3ConnectionPool>(
-          8, endpoint, access_key_id_, secret_access_key_);
-    }
+    //    if (aws_options_) {
+    //        Aws::InitAPI(*aws_options_);
+    //
+    //        std::vector<std::string> tokens =
+    //        common::split_uri(dataset_root_); CHECK(tokens.size() > 2); //
+    //        s3://bucket/key std::string endpoint = tokens.at(0) + "//" +
+    //        tokens.at(1);
+    //
+    //        connection_pool_ = std::make_shared<S3ConnectionPool>(
+    //          8, endpoint, access_key_id_, secret_access_key_);
+    //    }
 
     allocate_writers_();
 
@@ -506,10 +508,10 @@ zarr::Zarr::stop() noexcept
                 writer->finalize();
             }
 
-            if (aws_options_) {
-                Aws::ShutdownAPI(*aws_options_);
-                aws_options_ = std::nullopt;
-            }
+            //            if (aws_options_) {
+            //                Aws::ShutdownAPI(*aws_options_);
+            //                aws_options_ = std::nullopt;
+            //            }
 
             // call await_stop() before destroying to give jobs a chance to
             // finish

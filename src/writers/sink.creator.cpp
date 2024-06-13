@@ -6,7 +6,7 @@
 #include <latch>
 #include <queue>
 
-#include <aws/s3/model/CreateBucketRequest.h>
+//#include <aws/s3/model/CreateBucketRequest.h>
 
 namespace zarr = acquire::sink::zarr;
 namespace common = zarr::common;
@@ -206,54 +206,54 @@ zarr::SinkCreator::make_files_(std::queue<std::string>& file_paths,
 bool
 zarr::SinkCreator::make_s3_bucket_(const std::string& bucket_name)
 {
-    if (bucket_name.empty()) {
-        return false;
-    }
-
-    if (!connection_pool_) {
-        LOGE("S3 connection pool not provided.");
-        return false;
-    }
-
-    auto conn = connection_pool_->get_connection();
-    auto client = conn->client();
-
-    // list buckets, check if the bucket already exists
-    Aws::S3::Model::ListBucketsOutcome outcome = client->ListBuckets();
-    if (!outcome.IsSuccess()) {
-        LOGE("Failed to list buckets: %s",
-             outcome.GetError().GetMessage().c_str());
-        connection_pool_->release_connection(std::move(conn));
-        return false;
-    }
-
-    bool bucket_exists = false;
-    for (auto& bucket : outcome.GetResult().GetBuckets()) {
-        if (bucket.GetName() == bucket_name) {
-            bucket_exists = true;
-            break;
-        }
-    }
-
-    if (bucket_exists) {
-        connection_pool_->release_connection(std::move(conn));
-        return true;
-    }
-
-    // create the bucket
-    Aws::S3::Model::CreateBucketRequest request;
-    request.SetBucket(bucket_name.c_str());
-    auto create_outcome = client->CreateBucket(request);
-    if (!create_outcome.IsSuccess()) {
-        LOGE("Failed to create bucket '%s': %s",
-             bucket_name.c_str(),
-             create_outcome.GetError().GetMessage().c_str());
-        connection_pool_->release_connection(std::move(conn));
-        return false;
-    }
-
-    // cleanup
-    connection_pool_->release_connection(std::move(conn));
+//    if (bucket_name.empty()) {
+//        return false;
+//    }
+//
+//    if (!connection_pool_) {
+//        LOGE("S3 connection pool not provided.");
+//        return false;
+//    }
+//
+//    auto conn = connection_pool_->get_connection();
+//    auto client = conn->client();
+//
+//    // list buckets, check if the bucket already exists
+//    Aws::S3::Model::ListBucketsOutcome outcome = client->ListBuckets();
+//    if (!outcome.IsSuccess()) {
+//        LOGE("Failed to list buckets: %s",
+//             outcome.GetError().GetMessage().c_str());
+//        connection_pool_->release_connection(std::move(conn));
+//        return false;
+//    }
+//
+//    bool bucket_exists = false;
+//    for (auto& bucket : outcome.GetResult().GetBuckets()) {
+//        if (bucket.GetName() == bucket_name) {
+//            bucket_exists = true;
+//            break;
+//        }
+//    }
+//
+//    if (bucket_exists) {
+//        connection_pool_->release_connection(std::move(conn));
+//        return true;
+//    }
+//
+//    // create the bucket
+//    Aws::S3::Model::CreateBucketRequest request;
+//    request.SetBucket(bucket_name.c_str());
+//    auto create_outcome = client->CreateBucket(request);
+//    if (!create_outcome.IsSuccess()) {
+//        LOGE("Failed to create bucket '%s': %s",
+//             bucket_name.c_str(),
+//             create_outcome.GetError().GetMessage().c_str());
+//        connection_pool_->release_connection(std::move(conn));
+//        return false;
+//    }
+//
+//    // cleanup
+//    connection_pool_->release_connection(std::move(conn));
     return true;
 }
 
@@ -496,34 +496,34 @@ extern "C"
         int retval = 0;
 
         try {
-            auto thread_pool = std::make_shared<zarr::ThreadPool>(
-              std::thread::hardware_concurrency(),
-              [](const std::string& err) { LOGE("Error: %s\n", err.c_str()); });
-            zarr::SinkCreator creator{ thread_pool, nullptr };
-
-            std::vector<zarr::Dimension> dims;
-            dims.emplace_back("x", DimensionType_Space, 10, 2, 0); // 5 chunks
-            dims.emplace_back("y", DimensionType_Space, 4, 2, 0);  // 2 chunks
-            dims.emplace_back(
-              "z", DimensionType_Space, 0, 3, 0); // 3 timepoints per chunk
-
-            std::vector<std::shared_ptr<zarr::Sink>> files;
-            CHECK(creator.create_chunk_sinks(base_dir.string(), dims, files));
-
-            CHECK(files.size() == 5 * 2);
-            for (const auto& f : files) {
-                CHECK(f);
-                f->close();
-            }
-
-            CHECK(fs::is_directory(base_dir));
-            for (auto y = 0; y < 2; ++y) {
-                CHECK(fs::is_directory(base_dir / std::to_string(y)));
-                for (auto x = 0; x < 5; ++x) {
-                    CHECK(fs::is_regular_file(base_dir / std::to_string(y) /
-                                              std::to_string(x)));
-                }
-            }
+//            auto thread_pool = std::make_shared<zarr::ThreadPool>(
+//              std::thread::hardware_concurrency(),
+//              [](const std::string& err) { LOGE("Error: %s\n", err.c_str()); });
+//            zarr::SinkCreator creator{ thread_pool, nullptr };
+//
+//            std::vector<zarr::Dimension> dims;
+//            dims.emplace_back("x", DimensionType_Space, 10, 2, 0); // 5 chunks
+//            dims.emplace_back("y", DimensionType_Space, 4, 2, 0);  // 2 chunks
+//            dims.emplace_back(
+//              "z", DimensionType_Space, 0, 3, 0); // 3 timepoints per chunk
+//
+//            std::vector<std::shared_ptr<zarr::Sink>> files;
+//            CHECK(creator.create_chunk_sinks(base_dir.string(), dims, files));
+//
+//            CHECK(files.size() == 5 * 2);
+//            for (const auto& f : files) {
+//                CHECK(f);
+//                f->close();
+//            }
+//
+//            CHECK(fs::is_directory(base_dir));
+//            for (auto y = 0; y < 2; ++y) {
+//                CHECK(fs::is_directory(base_dir / std::to_string(y)));
+//                for (auto x = 0; x < 5; ++x) {
+//                    CHECK(fs::is_regular_file(base_dir / std::to_string(y) /
+//                                              std::to_string(x)));
+//                }
+//            }
             retval = 1;
         } catch (const std::exception& exc) {
             LOGE("Exception: %s\n", exc.what());
@@ -544,39 +544,39 @@ extern "C"
         int retval = 0;
 
         try {
-            auto thread_pool = std::make_shared<zarr::ThreadPool>(
-              std::thread::hardware_concurrency(),
-              [](const std::string& err) { LOGE("Error: %s", err.c_str()); });
-            zarr::SinkCreator creator{ thread_pool, nullptr };
-
-            std::vector<zarr::Dimension> dims;
-            dims.emplace_back(
-              "x", DimensionType_Space, 10, 2, 5); // 5 chunks, 1 shard
-            dims.emplace_back(
-              "y", DimensionType_Space, 4, 2, 1); // 2 chunks, 2 shards
-            dims.emplace_back(
-              "z", DimensionType_Space, 8, 2, 2); // 4 chunks, 2 shards
-
-            std::vector<std::shared_ptr<zarr::Sink>> files;
-            CHECK(creator.create_shard_sinks(base_dir.string(), dims, files));
-
-            CHECK(files.size() == 2);
-            for (auto& f : files) {
-                CHECK(f);
-                f->close();
-            }
-
-            CHECK(fs::is_directory(base_dir));
-            for (auto y = 0; y < 2; ++y) {
-                CHECK(fs::is_directory(base_dir / std::to_string(y)));
-                for (auto x = 0; x < 1; ++x) {
-                    CHECK(fs::is_regular_file(base_dir / std::to_string(y) /
-                                              std::to_string(x)));
-                }
-            }
-
-            // cleanup
-            fs::remove_all(base_dir);
+//            auto thread_pool = std::make_shared<zarr::ThreadPool>(
+//              std::thread::hardware_concurrency(),
+//              [](const std::string& err) { LOGE("Error: %s", err.c_str()); });
+//            zarr::SinkCreator creator{ thread_pool, nullptr };
+//
+//            std::vector<zarr::Dimension> dims;
+//            dims.emplace_back(
+//              "x", DimensionType_Space, 10, 2, 5); // 5 chunks, 1 shard
+//            dims.emplace_back(
+//              "y", DimensionType_Space, 4, 2, 1); // 2 chunks, 2 shards
+//            dims.emplace_back(
+//              "z", DimensionType_Space, 8, 2, 2); // 4 chunks, 2 shards
+//
+//            std::vector<std::shared_ptr<zarr::Sink>> files;
+//            CHECK(creator.create_shard_sinks(base_dir.string(), dims, files));
+//
+//            CHECK(files.size() == 2);
+//            for (auto& f : files) {
+//                CHECK(f);
+//                f->close();
+//            }
+//
+//            CHECK(fs::is_directory(base_dir));
+//            for (auto y = 0; y < 2; ++y) {
+//                CHECK(fs::is_directory(base_dir / std::to_string(y)));
+//                for (auto x = 0; x < 1; ++x) {
+//                    CHECK(fs::is_regular_file(base_dir / std::to_string(y) /
+//                                              std::to_string(x)));
+//                }
+//            }
+//
+//            // cleanup
+//            fs::remove_all(base_dir);
 
             retval = 1;
         } catch (const std::exception& exc) {

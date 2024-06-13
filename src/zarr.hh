@@ -18,7 +18,7 @@
 #include <utility> // std::pair
 #include <vector>
 
-#include <aws/core/Aws.h>
+//#include <aws/core/Aws.h>
 
 namespace fs = std::filesystem;
 
@@ -52,7 +52,7 @@ struct Zarr : public Storage
     std::string access_key_id_;
     std::string secret_access_key_;
     std::string external_metadata_json_;
-    std::optional<Aws::SDKOptions> aws_options_;
+//    std::optional<Aws::SDKOptions> aws_options_;
     PixelScale pixel_scale_um_;
     bool enable_multiscale_;
 

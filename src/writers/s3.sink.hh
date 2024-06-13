@@ -5,15 +5,15 @@
 #include "platform.h"
 #include "../common/connection.pool.hh"
 
-#include <aws/core/utils/Outcome.h>
-#include <aws/s3/model/UploadPartResult.h>
-#include <aws/s3/S3Errors.h>
+//#include <aws/core/utils/Outcome.h>
+//#include <aws/s3/model/UploadPartResult.h>
+//#include <aws/s3/S3Errors.h>
 
 #include <future>
 #include <string>
 
-using UploadPartResultOutcome =
-  Aws::Utils::Outcome<Aws::S3::Model::UploadPartResult, Aws::S3::S3Error>;
+//using UploadPartResultOutcome =
+//  Aws::Utils::Outcome<Aws::S3::Model::UploadPartResult, Aws::S3::S3Error>;
 
 namespace acquire::sink::zarr {
 struct S3Sink final : public Sink
@@ -41,7 +41,7 @@ struct S3Sink final : public Sink
     size_t buf_size_ = 0;
 
     std::string upload_id_;
-    std::vector<std::future<UploadPartResultOutcome>> callables_;
+//    std::vector<std::future<UploadPartResultOutcome>> callables_;
 
     [[nodiscard]] bool write_to_buffer_(const uint8_t* buf,
                                         size_t bytes_of_buf);

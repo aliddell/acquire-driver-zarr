@@ -1,7 +1,7 @@
 #include "connection.pool.hh"
 #include "logger.h"
 
-#include <aws/core/auth/AWSCredentialsProviderChain.h>
+//#include <aws/core/auth/AWSCredentialsProviderChain.h>
 
 #define LOG(...) aq_logger(0, __FILE__, __LINE__, __FUNCTION__, __VA_ARGS__)
 #define LOGE(...) aq_logger(1, __FILE__, __LINE__, __FUNCTION__, __VA_ARGS__)
@@ -26,24 +26,24 @@ zarr::S3Connection::S3Connection(const std::string& endpoint,
                                  const std::string& access_key_id,
                                  const std::string& secret_access_key)
 {
-    Aws::Client::ClientConfiguration config;
-    config.endpointOverride = endpoint;
-    const Aws::Auth::AWSCredentials credentials(access_key_id,
-                                                secret_access_key);
-    client_ = std::make_shared<Aws::S3::S3Client>(credentials, nullptr, config);
-    CHECK(client_);
+//    Aws::Client::ClientConfiguration config;
+//    config.endpointOverride = endpoint;
+//    const Aws::Auth::AWSCredentials credentials(access_key_id,
+//                                                secret_access_key);
+//    client_ = std::make_shared<Aws::S3::S3Client>(credentials, nullptr, config);
+//    CHECK(client_);
 }
 
 zarr::S3Connection::~S3Connection() noexcept
 {
-    client_.reset();
+//    client_.reset();
 }
 
-std::shared_ptr<Aws::S3::S3Client>
-zarr::S3Connection::client() const noexcept
-{
-    return client_;
-}
+//std::shared_ptr<Aws::S3::S3Client>
+//zarr::S3Connection::client() const noexcept
+//{
+//    return client_;
+//}
 
 zarr::S3ConnectionPool::S3ConnectionPool(size_t n_connections,
                                          const std::string& endpoint,
