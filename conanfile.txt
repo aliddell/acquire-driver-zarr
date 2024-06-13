@@ -1,0 +1,2 @@
+[requires]
+aws-sdk-cpp/1.9.234

@@ -101,18 +101,27 @@ zarr::ThreadPool::thread_worker_()
     TRACE("Worker thread starting.");
 
     while (true) {
-        std::unique_lock lock(jobs_mutex_);
-        cv_.wait(lock, [&] { return should_stop_() || !jobs_.empty(); });
+        try {
+            std::unique_lock lock(jobs_mutex_);
+            cv_.wait(lock, [&] { return should_stop_() || !jobs_.empty(); });
 
-        if (should_stop_()) {
-            break;
-        }
-
-        if (auto job = pop_from_job_queue_(); job) {
-            lock.unlock();
-            if (std::string err_msg; !(*job)(err_msg)) {
-                error_handler_(err_msg);
+            if (should_stop_()) {
+                break;
             }
+
+            if (auto job = pop_from_job_queue_(); job) {
+                lock.unlock();
+                if (std::string err_msg; !(*job)(err_msg)) {
+                    error_handler_(err_msg);
+                }
+            }
+        } catch (const std::exception& exc) {
+            std::string err_msg =
+              "Exception in thread worker: " + std::string(exc.what());
+            LOGE("%s", err_msg.c_str());
+        } catch (...) {
+            std::string err_msg = "Exception in thread worker (unknown)";
+            LOGE("%s", err_msg.c_str());
         }
     }
 

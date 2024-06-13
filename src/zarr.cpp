@@ -461,8 +461,7 @@ zarr::Zarr::start()
         std::function<void(const std::string&)> set_error =
           [this](const std::string& err) { this->set_error(err); };
 
-        thread_pool_ = std::make_shared<ThreadPool>(
-          std::thread::hardware_concurrency(), std::move(set_error));
+        thread_pool_ = std::make_shared<ThreadPool>(1, std::move(set_error));
     }
 
     // if this is an S3 acquisition, set up the API and connection pool

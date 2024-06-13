@@ -48,7 +48,7 @@ else ()
         add_executable(${tgt} ${name}.cpp)
         target_compile_definitions(${tgt} PUBLIC "TEST=\"${tgt}\"")
         set_target_properties(${tgt} PROPERTIES
-                MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL"
+                MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
         )
         target_include_directories(${tgt} PRIVATE "${CMAKE_CURRENT_LIST_DIR}/../")
         target_link_libraries(${tgt}
@@ -70,7 +70,6 @@ else ()
     foreach (driver
             acquire-driver-common
             acquire-driver-zarr
-#            ${AWSSDK_LINK_LIBRARIES}
     )
         add_custom_target(${project}-copy-${driver}-for-tests
                 COMMAND ${CMAKE_COMMAND} -E copy
@@ -84,8 +83,4 @@ else ()
             add_dependencies(${tgt} ${project}-copy-${driver}-for-tests)
         endforeach ()
     endforeach ()
-
-#    if (MSVC)
-#        AWSSDK_CPY_DYN_LIBS(SERVICE_COMPONENTS "" ${CMAKE_CURRENT_BINARY_DIR})
-#    endif ()
 endif ()
