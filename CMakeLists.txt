@@ -37,4 +37,6 @@ if (WITH_EXAMPLES)
     add_subdirectory(examples)
 endif ()
 
+add_subdirectory(benchmark)
+
 include(CPack)
